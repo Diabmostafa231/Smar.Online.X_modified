@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product — Smart Online X</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a href="index.html" class="logo">Smart Online <span class="logo-x">X</span></a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="products.html" class="active">Shop</a>
+      <a href="orders.html">Orders</a>
+      <a href="feedback.html">Feedback</a>
+    </nav>
+    <form class="search-form" data-search-form>
+      <input type="search" name="q" placeholder="Search products…" aria-label="Search products">
+    </form>
+    <div class="topbar-actions">
+      <span data-auth-slot></span>
+      <a href="cart.html" class="icon-link">Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+
+<div class="container" data-product-root>
+  <p style="color:var(--text-muted); padding:48px 0;">Loading product…</p>
+</div>
+
+<footer class="container">
+  <span>© 2026 Smart Online X.</span>
+  <span>Built with a Flask API + a static storefront.</span>
+</footer>
+
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+  const id = new URLSearchParams(window.location.search).get("id");
+  const root = document.querySelector("[data-product-root]");
+
+  function stockNote(stock) {
+    if (stock <= 0) return `<span class="stock-note out">Out of stock</span>`;
+    if (stock <= 5) return `<span class="stock-note low">Only ${stock} left</span>`;
+    return `<span class="stock-note">In stock</span>`;
+  }
+
+  (async function loadProduct() {
+    if (!id) { root.innerHTML = "<p>No product specified.</p>"; return; }
+    try {
+      const { product } = await api.getProduct(id);
+      document.title = `${product.name} — Smart Online X`;
+      root.innerHTML = `
+        <div class="product-detail">
+          <div class="product-detail-media"><img src="${product.image_url}" alt="${product.name}"></div>
+          <div class="product-detail-info">
+            <span class="product-category">${product.category}</span>
+            <h1>${product.name}</h1>
+            <span class="spec-price">$${formatMoney(product.price)}</span>
+            <p class="desc">${product.description}</p>
+            <div class="qty-row">
+              <div class="qty-control">
+                <button type="button" data-qty-minus aria-label="Decrease quantity">−</button>
+                <input type="number" min="1" value="1" data-qty-input aria-label="Quantity">
+                <button type="button" data-qty-plus aria-label="Increase quantity">+</button>
+              </div>
+              ${stockNote(product.stock)}
+            </div>
+            <button class="btn btn-primary" data-add-to-cart ${product.stock <= 0 ? "disabled" : ""}>
+              ${product.stock <= 0 ? "Out of stock" : "Add to cart"}
+            </button>
+          </div>
+        </div>
+      `;
+
+      const qtyInput = root.querySelector("[data-qty-input]");
+      root.querySelector("[data-qty-minus]").addEventListener("click", () => {
+        qtyInput.value = Math.max(1, Number(qtyInput.value) - 1);
+      });
+      root.querySelector("[data-qty-plus]").addEventListener("click", () => {
+        qtyInput.value = Math.min(product.stock, Number(qtyInput.value) + 1);
+      });
+
+      root.querySelector("[data-add-to-cart]").addEventListener("click", async (e) => {
+        if (!authToken()) { window.location.href = "login.html"; return; }
+        e.target.disabled = true;
+        try {
+          await api.addToCart(product.id, Number(qtyInput.value));
+          showToast(`Added ${product.name} to cart`);
+          refreshCartCount();
+        } catch (err) {
+          showToast(err.message);
+        } finally {
+          e.target.disabled = false;
+        }
+      });
+    } catch (err) {
+      root.innerHTML = `<div class="empty-state"><h3>Couldn't load this product</h3><p>${err.message}</p></div>`;
+    }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feedback — Smart Online X</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a href="index.html" class="logo">Smart Online <span class="logo-x">X</span></a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="products.html">Shop</a>
+      <a href="orders.html">Orders</a>
+      <a href="feedback.html" class="active">Feedback</a>
+    </nav>
+    <span></span>
+    <div class="topbar-actions">
+      <span data-auth-slot></span>
+      <a href="cart.html" class="icon-link">Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+
+<div class="auth-shell">
+  <h1>Send feedback</h1>
+  <p class="sub">Tell us what's working and what isn't. This form is local-only for now — wire it to an endpoint when you're ready.</p>
+  <div class="form-msg" data-msg></div>
+  <form data-feedback-form>
+    <div class="field">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" required>
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <div class="field">
+      <label for="message">Message</label>
+      <textarea id="message" name="message" rows="4" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Send feedback</button>
+  </form>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+  document.querySelector("[data-feedback-form]").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const msg = document.querySelector("[data-msg]");
+    msg.textContent = "Thanks — your feedback was recorded locally.";
+    msg.className = "form-msg success";
+    e.target.reset();
+  });
+</script>
+</body>
+</html>

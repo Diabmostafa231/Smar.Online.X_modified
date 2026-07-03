@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign up — Smart Online X</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a href="index.html" class="logo">Smart Online <span class="logo-x">X</span></a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="products.html">Shop</a>
+    </nav>
+    <span></span>
+    <div class="topbar-actions">
+      <a href="cart.html" class="icon-link">Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+
+<div class="auth-shell">
+  <h1>Create your account</h1>
+  <p class="sub">Takes about a minute.</p>
+  <div class="form-msg" data-msg></div>
+  <form data-signup-form>
+    <div class="field">
+      <label for="full_name">Full name</label>
+      <input type="text" id="full_name" name="full_name" required autocomplete="name">
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required autocomplete="email">
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required minlength="6" autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label for="address">Shipping address (optional)</label>
+      <textarea id="address" name="address" rows="2"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block" data-submit>Create account</button>
+  </form>
+  <p class="form-foot">Already have an account? <a href="login.html">Log in</a></p>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  document.querySelector("[data-signup-form]").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.querySelector("[data-msg]");
+    const btn = document.querySelector("[data-submit]");
+    const data = Object.fromEntries(new FormData(e.target));
+    btn.disabled = true;
+    btn.textContent = "Creating account…";
+    try {
+      const res = await api.signup(data);
+      setAuthToken(res.token);
+      setCurrentUser(res.user);
+      window.location.href = "index.html";
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.className = "form-msg error";
+      btn.disabled = false;
+      btn.textContent = "Create account";
+    }
+  });
+</script>
+</body>
+</html>

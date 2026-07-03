@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Online X — Everyday tech, well specified</title>
+<meta name="description" content="Smart Online X is a curated electronics store: audio, wearables, smart home, and accessories.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a href="index.html" class="logo">Smart Online <span class="logo-x">X</span></a>
+    <nav class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="products.html">Shop</a>
+      <a href="orders.html">Orders</a>
+      <a href="feedback.html">Feedback</a>
+    </nav>
+    <form class="search-form" data-search-form>
+      <input type="search" name="q" placeholder="Search products…" aria-label="Search products">
+    </form>
+    <div class="topbar-actions">
+      <span data-auth-slot></span>
+      <a href="cart.html" class="icon-link">Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow">// curated electronics</span>
+      <h1>Everyday tech, well specified.</h1>
+      <p>Audio, wearables, smart home, and accessories — each one picked for what's actually on the spec sheet, not the marketing copy.</p>
+      <div class="hero-actions">
+        <a href="products.html" class="btn btn-primary">Browse the catalog</a>
+        <a href="#categories" class="btn btn-ghost">See categories</a>
+      </div>
+    </div>
+    <div class="hero-panel">
+      <div class="hero-panel-row"><span>Free shipping</span><span>orders over $75</span></div>
+      <div class="hero-panel-row"><span>Returns</span><span>30-day window</span></div>
+      <div class="hero-panel-row"><span>Warranty</span><span>1–2 yr, per item</span></div>
+      <div class="hero-panel-row"><span>Support</span><span>real humans, not bots</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section container" id="categories">
+  <div class="section-head">
+    <div>
+      <h2>Shop by category</h2>
+      <p>Jump straight to what you're after.</p>
+    </div>
+  </div>
+  <div class="chip-row">
+    <a class="chip" href="products.html?category=audio">Audio</a>
+    <a class="chip" href="products.html?category=wearables">Wearables</a>
+    <a class="chip" href="products.html?category=smart-home">Smart home</a>
+    <a class="chip" href="products.html?category=accessories">Accessories</a>
+    <a class="chip" href="products.html?category=video">Video</a>
+  </div>
+</section>
+
+<section class="section container">
+  <div class="section-head">
+    <div>
+      <h2>Featured this week</h2>
+      <p>Newest additions to the catalog.</p>
+    </div>
+    <a href="products.html" class="btn btn-ghost btn-sm">View all</a>
+  </div>
+  <div class="product-grid" data-featured-grid>
+    <p style="color:var(--text-muted)">Loading products…</p>
+  </div>
+</section>
+
+<footer class="container">
+  <span>© 2026 Smart Online X.</span>
+  <span>Built with a Flask API + a static storefront.</span>
+</footer>
+
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+  (async function loadFeatured() {
+    const grid = document.querySelector("[data-featured-grid]");
+    try {
+      const { products } = await api.listProducts();
+      grid.innerHTML = products.slice(0, 6).map(productCardHTML).join("") ||
+        `<div class="empty-state"><h3>No products yet</h3><p>Run the seed script on the backend to add sample products.</p></div>`;
+    } catch (err) {
+      grid.innerHTML = `<div class="empty-state"><h3>Couldn't load products</h3><p>${err.message}. Is the backend running and is API_BASE_URL set correctly?</p></div>`;
+    }
+  })();
+</script>
+</body>
+</html>

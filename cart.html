@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your cart — Smart Online X</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a href="index.html" class="logo">Smart Online <span class="logo-x">X</span></a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="products.html">Shop</a>
+      <a href="orders.html">Orders</a>
+      <a href="feedback.html">Feedback</a>
+    </nav>
+    <form class="search-form" data-search-form>
+      <input type="search" name="q" placeholder="Search products…" aria-label="Search products">
+    </form>
+    <div class="topbar-actions">
+      <span data-auth-slot></span>
+      <a href="cart.html" class="icon-link">Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="cart-layout" data-cart-root>
+    <p style="color:var(--text-muted)">Loading cart…</p>
+  </div>
+</div>
+
+<footer class="container">
+  <span>© 2026 Smart Online X.</span>
+  <span>Built with a Flask API + a static storefront.</span>
+</footer>
+
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+  const root = document.querySelector("[data-cart-root]");
+
+  async function renderCart() {
+    if (!authToken()) {
+      root.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1">
+          <h3>Log in to see your cart</h3>
+          <p>Your cart is tied to your account.</p>
+          <a href="login.html" class="btn btn-primary" style="margin-top:16px">Log in</a>
+        </div>`;
+      return;
+    }
+
+    try {
+      const { items, total } = await api.getCart();
+      if (!items.length) {
+        root.innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <h3>Your cart is empty</h3>
+            <p>Add something from the catalog to get started.</p>
+            <a href="products.html" class="btn btn-primary" style="margin-top:16px">Browse products</a>
+          </div>`;
+        return;
+      }
+
+      root.innerHTML = `
+        <div>
+          ${items.map((item) => `
+            <div class="cart-line" data-line="${item.id}">
+              <img src="${item.product.image_url}" alt="${item.product.name}">
+              <div>
+                <div class="cart-line-name">${item.product.name}</div>
+                <div class="spec-price">$${formatMoney(item.product.price)}</div>
+              </div>
+              <div class="qty-control">
+                <button type="button" data-line-minus>−</button>
+                <input type="number" min="1" value="${item.quantity}" data-line-qty>
+                <button type="button" data-line-plus>+</button>
+              </div>
+              <button class="cart-line-remove" data-line-remove>Remove</button>
+            </div>
+          `).join("")}
+        </div>
+        <div class="summary-card">
+          <h3 style="margin-bottom:16px">Order summary</h3>
+          <div class="summary-row"><span>Subtotal</span><span>$${formatMoney(total)}</span></div>
+          <div class="summary-row"><span>Shipping</span><span>${total >= 75 ? "Free" : "$6.00"}</span></div>
+          <div class="summary-row total"><span>Total</span><span>$${formatMoney(total >= 75 ? total : total + 6)}</span></div>
+          <a href="checkout.html" class="btn btn-primary btn-block" style="margin-top:16px">Checkout</a>
+        </div>
+      `;
+
+      items.forEach((item) => {
+        const line = root.querySelector(`[data-line="${item.id}"]`);
+        const qtyInput = line.querySelector("[data-line-qty]");
+
+        const updateQty = async (newQty) => {
+          if (newQty < 1) return;
+          try {
+            await api.updateCartItem(item.id, newQty);
+            renderCart();
+            refreshCartCount();
+          } catch (err) {
+            showToast(err.message);
+          }
+        };
+
+        line.querySelector("[data-line-minus]").addEventListener("click", () => updateQty(item.quantity - 1));
+        line.querySelector("[data-line-plus]").addEventListener("click", () => updateQty(item.quantity + 1));
+        qtyInput.addEventListener("change", () => updateQty(Number(qtyInput.value)));
+
+        line.querySelector("[data-line-remove]").addEventListener("click", async () => {
+          try {
+            await api.removeCartItem(item.id);
+            showToast("Removed from cart");
+            renderCart();
+            refreshCartCount();
+          } catch (err) {
+            showToast(err.message);
+          }
+        });
+      });
+    } catch (err) {
+      root.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><h3>Couldn't load your cart</h3><p>${err.message}</p></div>`;
+    }
+  }
+
+  renderCart();
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — Smart Online X</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a href="index.html" class="logo">Smart Online <span class="logo-x">X</span></a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="products.html" class="active">Shop</a>
+      <a href="orders.html">Orders</a>
+      <a href="feedback.html">Feedback</a>
+    </nav>
+    <form class="search-form" data-search-form>
+      <input type="search" name="q" placeholder="Search products…" aria-label="Search products">
+    </form>
+    <div class="topbar-actions">
+      <span data-auth-slot></span>
+      <a href="cart.html" class="icon-link">Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+
+<section class="section container">
+  <div class="section-head">
+    <div>
+      <h2 data-page-title>All products</h2>
+      <p data-page-sub>Everything in the catalog.</p>
+    </div>
+  </div>
+  <div class="chip-row" data-category-chips>
+    <a class="chip" data-cat="">All</a>
+    <a class="chip" data-cat="audio">Audio</a>
+    <a class="chip" data-cat="wearables">Wearables</a>
+    <a class="chip" data-cat="smart-home">Smart home</a>
+    <a class="chip" data-cat="accessories">Accessories</a>
+    <a class="chip" data-cat="video">Video</a>
+  </div>
+  <div class="product-grid" data-product-grid>
+    <p style="color:var(--text-muted)">Loading products…</p>
+  </div>
+</section>
+
+<footer class="container">
+  <span>© 2026 Smart Online X.</span>
+  <span>Built with a Flask API + a static storefront.</span>
+</footer>
+
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const activeCategory = params.get("category") || "";
+  const activeQuery = params.get("q") || "";
+
+  document.querySelectorAll("[data-cat]").forEach((chip) => {
+    if (chip.dataset.cat === activeCategory) chip.classList.add("active");
+    chip.addEventListener("click", () => {
+      const url = new URL(window.location.href);
+      if (chip.dataset.cat) url.searchParams.set("category", chip.dataset.cat);
+      else url.searchParams.delete("category");
+      url.searchParams.delete("q");
+      window.location.href = url.toString();
+    });
+  });
+
+  if (activeQuery) {
+    document.querySelector("[data-page-title]").textContent = `Results for "${activeQuery}"`;
+    document.querySelector("[data-page-sub]").textContent = "Matching products in the catalog.";
+  } else if (activeCategory) {
+    document.querySelector("[data-page-title]").textContent = activeCategory.replace("-", " ");
+    document.querySelector("[data-page-sub]").textContent = "Filtered by category.";
+  }
+
+  (async function loadProducts() {
+    const grid = document.querySelector("[data-product-grid]");
+    try {
+      const query = {};
+      if (activeCategory) query.category = activeCategory;
+      if (activeQuery) query.q = activeQuery;
+      const { products } = await api.listProducts(query);
+      grid.innerHTML = products.map(productCardHTML).join("") ||
+        `<div class="empty-state"><h3>No products found</h3><p>Try a different search or category.</p></div>`;
+    } catch (err) {
+      grid.innerHTML = `<div class="empty-state"><h3>Couldn't load products</h3><p>${err.message}</p></div>`;
+    }
+  })();
+</script>
+</body>
+</html>

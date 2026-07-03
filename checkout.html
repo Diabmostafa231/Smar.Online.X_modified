@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout — Smart Online X</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a href="index.html" class="logo">Smart Online <span class="logo-x">X</span></a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="products.html">Shop</a>
+      <a href="orders.html">Orders</a>
+      <a href="feedback.html">Feedback</a>
+    </nav>
+    <span></span>
+    <div class="topbar-actions">
+      <span data-auth-slot></span>
+      <a href="cart.html" class="icon-link">Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+
+<div class="auth-shell" style="max-width:520px" data-checkout-root>
+  <p style="color:var(--text-muted)">Loading checkout…</p>
+</div>
+
+<footer class="container">
+  <span>© 2026 Smart Online X.</span>
+  <span>Built with a Flask API + a static storefront.</span>
+</footer>
+
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+  const root = document.querySelector("[data-checkout-root]");
+
+  async function loadCheckout() {
+    if (!authToken()) { window.location.href = "login.html"; return; }
+
+    try {
+      const [{ items, total }, { user }] = await Promise.all([api.getCart(), api.me()]);
+      if (!items.length) {
+        root.innerHTML = `
+          <h1>Nothing to check out</h1>
+          <p class="sub">Your cart is empty.</p>
+          <a href="products.html" class="btn btn-primary btn-block">Browse products</a>`;
+        return;
+      }
+
+      const shipping = total >= 75 ? 0 : 6;
+
+      root.innerHTML = `
+        <h1>Checkout</h1>
+        <p class="sub">${items.reduce((s, i) => s + i.quantity, 0)} item(s) · $${formatMoney(total + shipping)} total</p>
+        <div class="form-msg" data-msg></div>
+        <form data-checkout-form>
+          <div class="field">
+            <label for="address">Shipping address</label>
+            <textarea id="address" name="address" rows="3" required>${user.address || ""}</textarea>
+          </div>
+          <div class="summary-row"><span>Subtotal</span><span>$${formatMoney(total)}</span></div>
+          <div class="summary-row"><span>Shipping</span><span>${shipping === 0 ? "Free" : "$" + formatMoney(shipping)}</span></div>
+          <div class="summary-row total"><span>Total</span><span>$${formatMoney(total + shipping)}</span></div>
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top:18px" data-submit>Place order</button>
+        </form>
+      `;
+
+      root.querySelector("[data-checkout-form]").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const msg = root.querySelector("[data-msg]");
+        const btn = root.querySelector("[data-submit]");
+        const address = new FormData(e.target).get("address");
+        btn.disabled = true;
+        btn.textContent = "Placing order…";
+        try {
+          const { order } = await api.checkout(address);
+          window.location.href = `orders.html?placed=${order.id}`;
+        } catch (err) {
+          setFormMessage(msg, err.message);
+          btn.disabled = false;
+          btn.textContent = "Place order";
+        }
+      });
+    } catch (err) {
+      root.innerHTML = `<div class="empty-state"><h3>Couldn't load checkout</h3><p>${err.message}</p></div>`;
+    }
+  }
+
+  loadCheckout();
+</script>
+</body>
+</html>

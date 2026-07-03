@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your orders — Smart Online X</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a href="index.html" class="logo">Smart Online <span class="logo-x">X</span></a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="products.html">Shop</a>
+      <a href="orders.html" class="active">Orders</a>
+      <a href="feedback.html">Feedback</a>
+    </nav>
+    <span></span>
+    <div class="topbar-actions">
+      <span data-auth-slot></span>
+      <a href="cart.html" class="icon-link">Cart <span class="cart-count" data-cart-count>0</span></a>
+    </div>
+  </div>
+</header>
+
+<section class="section container">
+  <div class="section-head">
+    <div>
+      <h2>Your orders</h2>
+      <p>Order history tied to your account.</p>
+    </div>
+  </div>
+  <div data-orders-root>
+    <p style="color:var(--text-muted)">Loading orders…</p>
+  </div>
+</section>
+
+<footer class="container">
+  <span>© 2026 Smart Online X.</span>
+  <span>Built with a Flask API + a static storefront.</span>
+</footer>
+
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+<script>
+  const root = document.querySelector("[data-orders-root]");
+  const placedId = new URLSearchParams(window.location.search).get("placed");
+
+  async function loadOrders() {
+    if (!authToken()) {
+      root.innerHTML = `
+        <div class="empty-state">
+          <h3>Log in to see your orders</h3>
+          <a href="login.html" class="btn btn-primary" style="margin-top:16px">Log in</a>
+        </div>`;
+      return;
+    }
+
+    try {
+      const { orders } = await api.listOrders();
+      if (!orders.length) {
+        root.innerHTML = `
+          <div class="empty-state">
+            <h3>No orders yet</h3>
+            <p>Once you check out, your orders will show up here.</p>
+            <a href="products.html" class="btn btn-primary" style="margin-top:16px">Browse products</a>
+          </div>`;
+        return;
+      }
+
+      if (placedId) showToast(`Order #${placedId} placed successfully`);
+
+      root.innerHTML = orders.map((order) => `
+        <div class="order-card">
+          <div class="order-card-head">
+            <span class="order-id">Order #${order.id}</span>
+            <span class="order-status">${order.status}</span>
+          </div>
+          <p style="color:var(--text-muted); font-size:0.85rem; margin:0 0 12px">
+            ${new Date(order.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+            · Ships to ${order.shipping_address}
+          </p>
+          ${order.items.map((item) => `
+            <div class="order-item-row">
+              <span>${item.quantity} × ${item.product_name}</span>
+              <span>$${formatMoney(item.line_total)}</span>
+            </div>
+          `).join("")}
+          <div class="summary-row total"><span>Total</span><span>$${formatMoney(order.total)}</span></div>
+        </div>
+      `).join("");
+    } catch (err) {
+      root.innerHTML = `<div class="empty-state"><h3>Couldn't load orders</h3><p>${err.message}</p></div>`;
+    }
+  }
+
+  loadOrders();
+</script>
+</body>
+</html>
